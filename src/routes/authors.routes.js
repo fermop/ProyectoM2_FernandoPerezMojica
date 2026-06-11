@@ -6,7 +6,7 @@ import {
   updateAuthorController,
   deleteAuthorController
 } from '#controllers/authors.controller.js'
-import { validateAuthorMiddleware } from '#middlewares/validate.middleware.js'
+import { validateAuthorMiddleware, validateIdMiddleware } from '#middlewares/validate.middleware.js'
 
 const authorsRouter = Router()
 
@@ -14,15 +14,15 @@ const authorsRouter = Router()
 authorsRouter.get('/', getAllAuthorsController)
 
 // GET /api/authors/:id - Detalle de usuario
-authorsRouter.get('/:id', getAuthorByIdController)
+authorsRouter.get('/:id', validateIdMiddleware, getAuthorByIdController)
 
 // POST /api/authors - Crear usuario
 authorsRouter.post('/', validateAuthorMiddleware, createAuthorController)
 
 // PUT /api/authors/:id - Actualizar usuario
-authorsRouter.put('/:id', validateAuthorMiddleware, updateAuthorController)
+authorsRouter.put('/:id', validateIdMiddleware, validateAuthorMiddleware, updateAuthorController)
 
 // DELETE /api/authors/:id - Eliminar usuario
-authorsRouter.delete('/:id', deleteAuthorController)
+authorsRouter.delete('/:id', validateIdMiddleware, deleteAuthorController)
 
 export default authorsRouter
