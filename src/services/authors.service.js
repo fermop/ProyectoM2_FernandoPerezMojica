@@ -20,7 +20,7 @@ export async function createAuthorService({ name, email, bio }) {
   if (emailExists) {
     const error = new Error("El correo ya se encuentra registrado.")
     error.code = '23505'
-    error.statusCode = 400
+    error.statusCode = 409
     throw error
   }
 
@@ -52,7 +52,7 @@ export async function updateAuthorService(id, { name, email, bio }) {
     if (emailExists) {
       const error = new Error("El correo ya se encuentra registrado por otro autor.")
       error.code = '23505'
-      error.statusCode = 400
+      error.statusCode = 409
       throw error
     }
   }
