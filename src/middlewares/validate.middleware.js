@@ -27,8 +27,19 @@ export function validateIdMiddleware(req, res, next) {
  */
 export function validateAuthorMiddleware(req, res, next) {
   const errors = []
-  const { name, email } = req.body  
-  
+  const { name, email } = req.body
+
+  // Protección de campos extra (Whitelisting)
+  const validFields = ['name', 'email', 'bio']
+  const extraFields = Object.keys(req.body).filter(field => !validFields.includes(field))
+
+  if (extraFields.length > 0) {
+    errors.push({
+      field: 'extra',
+      message: `Campos no permitidos en el cuerpo de la petición: ${extraFields.join(', ')}`
+    })
+  }
+
   // Validaciones obligatorias para creación (POST)
   if (req.method === 'POST') {
     const nameError = validateName(name)
