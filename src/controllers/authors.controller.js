@@ -6,7 +6,7 @@ import {
   deleteAuthorService
 } from '#services/authors.service.js'
 
-async function getAllAuthorsController(req, res, next) {
+export async function getAllAuthorsController(req, res, next) {
   try {
     const authors = await getAllAuthorsService()
     return res.status(200).json({ status: 'success', data: authors })
@@ -15,7 +15,7 @@ async function getAllAuthorsController(req, res, next) {
   }
 }
 
-async function getAuthorByIdController(req, res, next) {
+export async function getAuthorByIdController(req, res, next) {
   try {
     const { id } = req.params
     const author = await getAuthorByIdService(id)
@@ -25,7 +25,7 @@ async function getAuthorByIdController(req, res, next) {
   }
 }
 
-async function createAuthorController(req, res, next) {
+export async function createAuthorController(req, res, next) {
   try {
     const newAuthor = await createAuthorService(req.body)
     return res.status(201).json({ status: 'success', data: newAuthor })
@@ -34,7 +34,7 @@ async function createAuthorController(req, res, next) {
   }
 }
 
-async function updateAuthorController(req, res, next) {
+export async function updateAuthorController(req, res, next) {
   try {
     const { id } = req.params
     const updatedAuthor = await updateAuthorService(id, req.body)
@@ -44,7 +44,7 @@ async function updateAuthorController(req, res, next) {
   }
 }
 
-async function deleteAuthorController(req, res, next) {
+export async function deleteAuthorController(req, res, next) {
   try {
     const { id } = req.params
     const result = await deleteAuthorService(id)
@@ -52,12 +52,4 @@ async function deleteAuthorController(req, res, next) {
   } catch (error) {
     next(error)
   }
-}
-
-export default {
-  getAllAuthorsController,
-  getAuthorByIdController,
-  createAuthorController,
-  updateAuthorController,
-  deleteAuthorController
 }

@@ -1,6 +1,6 @@
 import { validateName, validateEmailStructure } from '#utils/validators.js'
 
-function validateAuthorMiddleware(req, res, next) {
+export function validateAuthorMiddleware(req, res, next) {
   const { name, email } = req.body
   const errors = []
 
@@ -19,8 +19,4 @@ function validateAuthorMiddleware(req, res, next) {
   }
 
   next()
-}
-
-export default {
-  validateAuthorMiddleware
 }

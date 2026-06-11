@@ -3,7 +3,7 @@
  * @param {string} name 
  * @returns {string|null} Mensaje de error o null si es válido.
  */
-function validateName(name) {
+export function validateName(name) {
   if (!name || name.trim() === '') return "El nombre es requerido."
   if (name.length > 100) return "El nombre no puede exceder los 100 caracteres."
   return null
@@ -14,7 +14,7 @@ function validateName(name) {
  * @param {string} email 
  * @returns {string|null} Mensaje de error o null si es válido.
  */
-function validateEmailStructure(email) {
+export function validateEmailStructure(email) {
   if (!email || email.trim() === '') return "El correo es requerido."
   if (email.length > 50) return "El correo no puede exceder los 50 caracteres."
   
@@ -28,9 +28,4 @@ function validateEmailStructure(email) {
   }
   
   return null
-}
-
-export default {
-  validateName,
-  validateEmailStructure
 }

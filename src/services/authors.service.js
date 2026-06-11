@@ -1,10 +1,10 @@
 import { localDatabase } from '#database/localDb.js'
 
-async function getAllAuthorsService() {
+export async function getAllAuthorsService() {
   return localDatabase.authors
 }
 
-async function getAuthorByIdService(id) {
+export async function getAuthorByIdService(id) {
   const author = localDatabase.authors.find(auth => auth.id === Number(id))
   if (!author) {
     const error = new Error(`No se encontró ningún autor con el ID: ${id}`)
@@ -14,7 +14,7 @@ async function getAuthorByIdService(id) {
   return author
 }
 
-async function createAuthorService({ name, email, bio }) {
+export async function createAuthorService({ name, email, bio }) {
   // Simular la restricción UNIQUE del esquema
   const emailExists = localDatabase.authors.some(auth => auth.email.toLowerCase() === email.toLowerCase())
   if (emailExists) {
@@ -36,7 +36,7 @@ async function createAuthorService({ name, email, bio }) {
   return newAuthor
 }
 
-async function updateAuthorService(id, { name, email, bio }) {
+export async function updateAuthorService(id, { name, email, bio }) {
   const authorIndex = localDatabase.authors.findIndex(auth => auth.id === Number(id))
   if (authorIndex === -1) {
     const error = new Error(`No se encontró ningún autor con el ID: ${id}`)
@@ -70,7 +70,7 @@ async function updateAuthorService(id, { name, email, bio }) {
   return updatedAuthor
 }
 
-async function deleteAuthorService(id) {
+export async function deleteAuthorService(id) {
   const authorIndex = localDatabase.authors.findIndex(auth => auth.id === Number(id))
   if (authorIndex === -1) {
     const error = new Error(`No se encontró ningún autor con el ID: ${id}`)
@@ -84,12 +84,4 @@ async function deleteAuthorService(id) {
   // Borramos el autor
   localDatabase.authors.splice(authorIndex, 1)
   return { message: "Autor y sus publicaciones eliminados correctamente." }
-}
-
-export default {
-  getAllAuthorsService,
-  getAuthorByIdService,
-  createAuthorService,
-  updateAuthorService,
-  deleteAuthorService
 }
