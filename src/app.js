@@ -2,6 +2,7 @@ import { loadEnvFile } from 'node:process'
 process.env.NODE_ENV !== 'production' && loadEnvFile('.env')
 import express from 'express'
 import mainRouter from '#routes/index.js'
+import errorHandlerMiddleware from '#middlewares/errorHandler.middleware.js'
 
 const app = express()
 
@@ -16,5 +17,7 @@ app.use((req, res) => {
     message: `No se encontró la ruta ${req.originalUrl} en este servidor.`
   })
 })
+
+app.use(errorHandlerMiddleware)
 
 export default app
