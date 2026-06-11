@@ -1,3 +1,5 @@
+const prohibitedCharacters = /[<>{}[\]\/\\|;:"]/;
+
 /**
  * Valida que el nombre cumpla con las reglas del negocio.
  * @param {string} name 
@@ -6,6 +8,7 @@
 export function validateName(name) {
   if (!name || name.trim() === '') return "El nombre es requerido."
   if (name.length > 100) return "El nombre no puede exceder los 100 caracteres."
+  if (prohibitedCharacters.test(name)) return "El nombre no puede contener caracteres especiales."
   return null
 }
 
@@ -27,5 +30,18 @@ export function validateEmailStructure(email) {
     return "El formato del correo electrónico es inválido."
   }
   
+  return null
+}
+/**
+ * Valida la longitud y caracteres de la biografía.
+ * @param {string} bio 
+ * @returns {string|null} Mensaje de error o null si es válido.
+ */
+export function validateBio(bio) {
+  if (!bio) return null
+  
+  const cleanBio = bio.trim()
+  if (cleanBio.length > 250) return "La biografía no puede exceder los 250 caracteres."
+  if (prohibitedCharacters.test(cleanBio)) return "La biografía no puede contener caracteres especiales."
   return null
 }

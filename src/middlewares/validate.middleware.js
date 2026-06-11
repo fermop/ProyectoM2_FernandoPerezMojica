@@ -1,4 +1,4 @@
-import { validateName, validateEmailStructure } from '#utils/validators.js'
+import { validateName, validateEmailStructure, validateBio } from '#utils/validators.js'
 
 /**
  * Middleware para validar que el parámetro ID de la URL sea estrictamente numérico
@@ -27,7 +27,7 @@ export function validateIdMiddleware(req, res, next) {
  */
 export function validateAuthorMiddleware(req, res, next) {
   const errors = []
-  const { name, email } = req.body
+  const { name, email, bio } = req.body
 
   // Protección de campos extra (Whitelisting)
   const validFields = ['name', 'email', 'bio']
@@ -47,6 +47,9 @@ export function validateAuthorMiddleware(req, res, next) {
 
     const emailError = validateEmailStructure(email)
     if (emailError) errors.push({ field: 'email', message: emailError })
+
+    const bioError = validateBio(bio)
+    if (bioError) errors.push({ field: 'bio', message: bioError })
   }
   // Validaciones condicionales para actualización parcial (PUT)
   else {
@@ -58,6 +61,11 @@ export function validateAuthorMiddleware(req, res, next) {
     if (email !== undefined) {
       const emailError = validateEmailStructure(email)
       if (emailError) errors.push({ field: 'email', message: emailError })
+    }
+
+    if (bio !== undefined) {
+      const bioError = validateBio(bio)
+      if (bioError) errors.push({ field: 'bio', message: bioError })
     }
   }
 
