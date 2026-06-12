@@ -25,15 +25,24 @@ export async function getPostsByAuthorService(authorId) {
 
   // Filtrar los posts de ese autor e inyectar el detalle de su autor
   const authorPosts = localDatabase.posts.filter(p => p.author_id === Number(authorId))
-  
-  return authorPosts.map(post => ({
-    ...post,
-    author: {
-      id: author.id,
-      name: author.name,
-      email: author.email
-    }
+  const cleanPosts = authorPosts.map(({ id, title, content, published, created_at }) => ({
+    id,
+    title,
+    content,
+    published,
+    created_at
   }))
+
+  return [
+    {
+      author: {
+        id: author.id,
+        name: author.name,
+        email: author.email
+      },
+      posts: cleanPosts
+    }
+  ]
 }
 
 export async function createPostService({ title, content, author_id, published }) {
