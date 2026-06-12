@@ -12,7 +12,7 @@ import {
 export function validateIdMiddleware(req, res, next) {
   const { id } = req.params
 
-  if (id !== undefined && isNaN(id)) {
+  if (id !== undefined && !/^\d+$/.test(id)) {
     return res.status(400).json({
       status: 'fail',
       message: 'Errores de validación en los parámetros de la petición.',
