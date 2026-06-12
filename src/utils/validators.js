@@ -41,7 +41,7 @@ export function validateBio(bio) {
   if (!bio) return null
   
   const cleanBio = bio.trim()
-  if (cleanBio.length > 250) return "La biografía no puede exceder los 250 caracteres."
+  if (cleanBio.length > 255) return "La biografía no puede exceder los 255 caracteres."
   if (prohibitedCharacters.test(cleanBio)) return "La biografía no puede contener caracteres especiales."
   return null
 }
