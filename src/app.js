@@ -1,5 +1,3 @@
-import { loadEnvFile } from 'node:process'
-process.env.NODE_ENV !== 'production' && loadEnvFile('.env')
 import express from 'express'
 import swaggerUi from 'swagger-ui-express'
 import YAML from 'yamljs'

@@ -1,3 +1,5 @@
+import { loadEnvFile } from 'node:process'
+process.env.NODE_ENV !== 'production' && loadEnvFile('.env')
 import pg from 'pg'
 
 const { Pool } = pg
@@ -18,5 +20,3 @@ const poolConfig = process.env.DATABASE_URL
     }
 
 export const pool = new Pool(poolConfig)
-
-export default pool

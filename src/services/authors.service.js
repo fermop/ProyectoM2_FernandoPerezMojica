@@ -1,87 +1,71 @@
-import { localDatabase } from '#database/localDb.js'
+import { pool } from '#database/config.js'
 
 export async function getAllAuthorsService() {
-  return localDatabase.authors
+  const result = await pool.query('SELECT * FROM authors ORDER BY id ASC')
+  return result.rows
 }
 
 export async function getAuthorByIdService(id) {
-  const author = localDatabase.authors.find(auth => auth.id === Number(id))
-  if (!author) {
+  const result = await pool.query('SELECT * FROM authors WHERE id = $1', [id])
+  if (result.rows.length === 0) {
     const error = new Error(`No se encontró ningún autor con el ID: ${id}`)
     error.statusCode = 404
     throw error
   }
-  return author
+  return result.rows[0]
 }
 
 export async function createAuthorService({ name, email, bio }) {
-  // Simular la restricción UNIQUE del esquema
-  const emailExists = localDatabase.authors.some(auth => auth.email.toLowerCase() === email.toLowerCase())
-  if (emailExists) {
-    const error = new Error("El correo ya se encuentra registrado.")
-    error.code = '23505'
-    error.statusCode = 409
+  try {
+    const result = await pool.query(
+      'INSERT INTO authors (name, email, bio) VALUES ($1, $2, $3) RETURNING *',
+      [name, email, bio || null]
+    )
+    return result.rows[0]
+  } catch (error) {
+    if (error.code === '23505') {
+      const customError = new Error('El correo ya se encuentra registrado.')
+      customError.statusCode = 409
+      throw customError
+    }
     throw error
   }
-
-  const newAuthor = {
-    id: localDatabase.authors.length > 0 ? Math.max(...localDatabase.authors.map(a => a.id)) + 1 : 1,
-    name,
-    email,
-    bio: bio || null,
-    created_at: new Date()
-  }
-
-  localDatabase.authors.push(newAuthor)
-  return newAuthor
 }
 
 export async function updateAuthorService(id, { name, email, bio }) {
-  const authorIndex = localDatabase.authors.findIndex(auth => auth.id === Number(id))
-  if (authorIndex === -1) {
+  const authorResult = await pool.query('SELECT * FROM authors WHERE id = $1', [id])
+  if (authorResult.rows.length === 0) {
     const error = new Error(`No se encontró ningún autor con el ID: ${id}`)
     error.statusCode = 404
     throw error
   }
+  const currentAuthor = authorResult.rows[0]
+  const updatedName = name !== undefined ? name : currentAuthor.name
+  const updatedEmail = email !== undefined ? email : currentAuthor.email
+  const updatedBio = bio !== undefined ? bio : currentAuthor.bio
 
-  // Verificar si el nuevo email está siendo usado por OTRO autor diferente
-  if (email) {
-    const emailExists = localDatabase.authors.some(
-      auth => auth.email.toLowerCase() === email.toLowerCase() && auth.id !== Number(id)
+  try {
+    const result = await pool.query(
+      'UPDATE authors SET name = $1, email = $2, bio = $3 WHERE id = $4 RETURNING *',
+      [updatedName, updatedEmail, updatedBio, id]
     )
-    if (emailExists) {
-      const error = new Error("El correo ya se encuentra registrado por otro autor.")
-      error.code = '23505'
-      error.statusCode = 409
-      throw error
+    return result.rows[0]
+  } catch (error) {
+    if (error.code === '23505') {
+      const customError = new Error('El correo ya se encuentra registrado por otro autor.')
+      customError.statusCode = 409
+      throw customError
     }
+    throw error
   }
-
-  // Actualizamos los campos presentes manteniendo los anteriores si no se envían
-  const currentAuthor = localDatabase.authors[authorIndex]
-  const updatedAuthor = {
-    ...currentAuthor,
-    name: name !== undefined ? name : currentAuthor.name,
-    email: email !== undefined ? email : currentAuthor.email,
-    bio: bio !== undefined ? bio : currentAuthor.bio
-  }
-
-  localDatabase.authors[authorIndex] = updatedAuthor
-  return updatedAuthor
 }
 
 export async function deleteAuthorService(id) {
-  const authorIndex = localDatabase.authors.findIndex(auth => auth.id === Number(id))
-  if (authorIndex === -1) {
+  const result = await pool.query('DELETE FROM authors WHERE id = $1', [id])
+  if (result.rowCount === 0) {
     const error = new Error(`No se encontró ningún autor con el ID: ${id}`)
     error.statusCode = 404
     throw error
   }
-
-  // ON DELETE CASCADE simulado: Al borrar el autor, eliminamos también sus posts
-  localDatabase.posts = localDatabase.posts.filter(post => post.author_id !== Number(id))
-  
-  // Borramos el autor
-  localDatabase.authors.splice(authorIndex, 1)
-  return { message: "Autor y sus publicaciones eliminados correctamente." }
+  return { message: 'Autor y sus publicaciones eliminados correctamente.' }
 }

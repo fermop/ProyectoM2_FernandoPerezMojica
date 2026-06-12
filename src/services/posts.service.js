@@ -1,100 +1,84 @@
-import { localDatabase } from '#database/localDb.js'
+import { pool } from '#database/config.js'
 
 export async function getAllPostsService() {
-  return localDatabase.posts
+  const result = await pool.query('SELECT * FROM posts ORDER BY id ASC')
+  return result.rows
 }
 
 export async function getPostByIdService(id) {
-  const post = localDatabase.posts.find(p => p.id === Number(id))
-  if (!post) {
+  const result = await pool.query('SELECT * FROM posts WHERE id = $1', [id])
+  if (result.rows.length === 0) {
     const error = new Error(`No se encontró ninguna publicación con el ID: ${id}`)
     error.statusCode = 404
     throw error
   }
-  return post
+  return result.rows[0]
 }
 
 export async function getPostsByAuthorService(authorId) {
-  // Verificar si el autor existe
-  const author = localDatabase.authors.find(auth => auth.id === Number(authorId))
-  if (!author) {
+  const authorResult = await pool.query('SELECT id, name, email FROM authors WHERE id = $1', [authorId])
+  if (authorResult.rows.length === 0) {
     const error = new Error(`No se encontró ningún autor con el ID: ${authorId}`)
     error.statusCode = 404
     throw error
   }
+  const author = authorResult.rows[0]
 
-  // Filtrar los posts de ese autor e inyectar el detalle de su autor
-  const authorPosts = localDatabase.posts.filter(p => p.author_id === Number(authorId))
-  const cleanPosts = authorPosts.map(({ id, title, content, published, created_at }) => ({
-    id,
-    title,
-    content,
-    published,
-    created_at
-  }))
+  const postsResult = await pool.query(
+    'SELECT id, title, content, published, created_at FROM posts WHERE author_id = $1 ORDER BY id ASC',
+    [authorId]
+  )
 
   return [
     {
-      author: {
-        id: author.id,
-        name: author.name,
-        email: author.email
-      },
-      posts: cleanPosts
+      author,
+      posts: postsResult.rows
     }
   ]
 }
 
 export async function createPostService({ title, content, author_id, published }) {
-  // Simular la restricción FOREIGN KEY: Verificar si el autor existe
-  const authorExists = localDatabase.authors.some(auth => auth.id === Number(author_id))
-  if (!authorExists) {
-    const error = new Error(`No se puede crear la publicación. El autor con ID ${author_id} no existe.`)
-    error.statusCode = 400
+  try {
+    const result = await pool.query(
+      'INSERT INTO posts (title, content, author_id, published) VALUES ($1, $2, $3, $4) RETURNING *',
+      [title, content, Number(author_id), published !== undefined ? published : true]
+    )
+    return result.rows[0]
+  } catch (error) {
+    if (error.code === '23503') {
+      const customError = new Error(`No se puede crear la publicación. El autor con ID ${author_id} no existe.`)
+      customError.statusCode = 400
+      throw customError
+    }
     throw error
   }
-
-  const newPost = {
-    id: localDatabase.posts.length > 0 ? Math.max(...localDatabase.posts.map(p => p.id)) + 1 : 1,
-    title,
-    content,
-    author_id: Number(author_id),
-    published: published !== undefined ? published : true,
-    created_at: new Date()
-  }
-
-  localDatabase.posts.push(newPost)
-  return newPost
 }
 
 export async function updatePostService(id, { title, content, published }) {
-  const postIndex = localDatabase.posts.findIndex(p => p.id === Number(id))
-  if (postIndex === -1) {
+  const postResult = await pool.query('SELECT * FROM posts WHERE id = $1', [id])
+  if (postResult.rows.length === 0) {
     const error = new Error(`No se encontró ninguna publicación con el ID: ${id}`)
     error.statusCode = 404
     throw error
   }
+  const currentPost = postResult.rows[0]
+  const updatedTitle = title !== undefined ? title : currentPost.title
+  const updatedContent = content !== undefined ? content : currentPost.content
+  const updatedPublished = published !== undefined ? published : currentPost.published
 
-  const currentPost = localDatabase.posts[postIndex]
-  const updatedPost = {
-    ...currentPost,
-    title: title !== undefined ? title : currentPost.title,
-    content: content !== undefined ? content : currentPost.content,
-    published: published !== undefined ? published : currentPost.published
-  }
-
-  localDatabase.posts[postIndex] = updatedPost
-  return updatedPost
+  const result = await pool.query(
+    'UPDATE posts SET title = $1, content = $2, published = $3 WHERE id = $4 RETURNING *',
+    [updatedTitle, updatedContent, updatedPublished, id]
+  )
+  return result.rows[0]
 }
 
 export async function deletePostService(id) {
-  const postIndex = localDatabase.posts.findIndex(p => p.id === Number(id))
-  if (postIndex === -1) {
+  const result = await pool.query('DELETE FROM posts WHERE id = $1', [id])
+  if (result.rowCount === 0) {
     const error = new Error(`No se encontró ninguna publicación con el ID: ${id}`)
     error.statusCode = 404
     throw error
   }
-
-  localDatabase.posts.splice(postIndex, 1)
-  return { message: "Publicación eliminada correctamente." }
+  return { message: 'Publicación eliminada correctamente.' }
 }
