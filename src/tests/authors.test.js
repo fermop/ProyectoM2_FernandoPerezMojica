@@ -3,7 +3,6 @@ import app from '#app'
 import { localDatabase } from '#database/localDb.js'
 
 describe('Pruebas de Integración - Recurso Autores (/authors)', () => {
-  // Limpiamos y reiniciamos la base de datos en memoria antes de cada test para asegurar aislamiento
   beforeEach(() => {
     localDatabase.authors = [
       {
