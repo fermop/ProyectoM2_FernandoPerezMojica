@@ -150,6 +150,17 @@ describe('Pruebas de Integración - Recurso Autores (/authors)', () => {
       expect(response.body.data.name).toBe("Fernando Pérez")
     })
 
+    it('400: Debería rebotar si el cuerpo de la petición viene vacío ({})', async () => {
+      const response = await request(app)
+        .put('/api/authors/1')
+        .send({})
+
+      expect(response.status).toBe(400)
+      expect(response.body.status).toBe('fail')
+      expect(response.body.errors[0].field).toBe('body')
+      expect(response.body.errors[0].message).toContain('Debe proporcionar al menos un campo válido para actualizar (name, email o bio).')
+    })
+
     it('400: Debería rebotar si el ID en la URL no es numérico', async () => {
       const response = await request(app)
         .put('/api/authors/abc')

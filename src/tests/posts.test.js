@@ -205,10 +205,21 @@ describe('Pruebas de Integración: Recurso Publicaciones (/posts)', () => {
       expect(response.body.data.content).toBe("Contenido inicial de prueba")
     })
 
+    it('400: Debería rebotar si el cuerpo de la petición viene vacío ({})', async () => {
+      const response = await request(app)
+        .put('/api/posts/1')
+        .send({})
+
+      expect(response.status).toBe(400)
+      expect(response.body.status).toBe('fail')
+      expect(response.body.errors[0].field).toBe('body')
+      expect(response.body.errors[0].message).toContain('Debe proporcionar al menos un campo válido para actualizar (title, content o published).')
+    })
+
     it('400: Debería denegar la actualización si se intenta modificar el autor original', async () => {
       const response = await request(app)
         .put('/api/posts/1')
-        .send({ author_id: 2 })
+        .send({ author_id: 2, title: "Intento de cambio de autor" })
 
       expect(response.status).toBe(400)
       expect(response.body.status).toBe('fail')

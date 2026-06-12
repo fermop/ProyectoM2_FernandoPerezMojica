@@ -59,19 +59,26 @@ export function validateAuthorMiddleware(req, res, next) {
   }
   // Validaciones condicionales para actualización parcial (PUT)
   else {
-    if (name !== undefined) {
-      const nameError = validateName(name)
-      if (nameError) errors.push({ field: 'name', message: nameError })
-    }
-
-    if (email !== undefined) {
-      const emailError = validateEmailStructure(email)
-      if (emailError) errors.push({ field: 'email', message: emailError })
-    }
-
-    if (bio !== undefined) {
-      const bioError = validateBio(bio)
-      if (bioError) errors.push({ field: 'bio', message: bioError })
+    if (name === undefined && email === undefined && bio === undefined) {
+      errors.push({ 
+        field: 'body', 
+        message: 'Debe proporcionar al menos un campo válido para actualizar (name, email o bio).' 
+      })
+    } else {
+        if (name !== undefined) {
+          const nameError = validateName(name)
+          if (nameError) errors.push({ field: 'name', message: nameError })
+        }
+    
+        if (email !== undefined) {
+          const emailError = validateEmailStructure(email)
+          if (emailError) errors.push({ field: 'email', message: emailError })
+        }
+    
+        if (bio !== undefined) {
+          const bioError = validateBio(bio)
+          if (bioError) errors.push({ field: 'bio', message: bioError })
+        }
     }
   }
 
@@ -120,19 +127,26 @@ export function validatePostMiddleware(req, res, next) {
   }
   // Validaciones condicionales para actualización parcial (PUT)
   else {
-    if (title !== undefined) {
-      const titleError = validatePostTitle(title)
-      if (titleError) errors.push({ field: 'title', message: titleError })
-    }
-
-    if (content !== undefined) {
-      const contentError = validatePostContent(content)
-      if (contentError) errors.push({ field: 'content', message: contentError })
-    }
-
-    if (author_id !== undefined) {
-      errors.push({ field: 'extra', message: "No está permitido modificar el autor original de una publicación." })
-    }
+      if (title === undefined && content === undefined && published === undefined) {
+        errors.push({ 
+          field: 'body', 
+          message: 'Debe proporcionar al menos un campo válido para actualizar (title, content o published).' 
+        })
+      } else {
+        if (title !== undefined) {
+          const titleError = validatePostTitle(title)
+          if (titleError) errors.push({ field: 'title', message: titleError })
+        }
+    
+        if (content !== undefined) {
+          const contentError = validatePostContent(content)
+          if (contentError) errors.push({ field: 'content', message: contentError })
+        }
+    
+        if (author_id !== undefined) {
+          errors.push({ field: 'extra', message: "No está permitido modificar el autor original de una publicación." })
+        }
+      }
   }
 
   // Validación del tipo de dato para 'published' si es que viene en la petición (POST o PUT)
