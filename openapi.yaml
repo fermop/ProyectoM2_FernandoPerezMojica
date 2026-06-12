@@ -1,0 +1,327 @@
+openapi: 3.1.1
+info:
+  title: API REST Autores y Publicaciones - Henry Bootcamp
+  description: API modular desarrollada con Express, validaciones nativas acumulativas, suite de pruebas en Vitest/Supertest y persistencia relacional.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Servidor de Desarrollo Local
+paths:
+  /api/authors:
+    get:
+      summary: Listar todos los autores
+      responses:
+        '200':
+          description: Lista de autores obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Author'
+    post:
+      summary: Crear un nuevo autor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+              properties:
+                name:
+                  type: string
+                  example: Alan Turing
+                email:
+                  type: string
+                  example: alan@turing.com
+                bio:
+                  type: string
+                  example: Padre de la computación moderna
+      responses:
+        '201':
+          description: Autor creado exitosamente
+        '400':
+          description: Errores de validación de formato (campos vacíos, caracteres prohibidos o extras)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '409':
+          description: Conflicto - El correo electrónico ya se encuentra registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: El correo electrónico ya se encuentra registrado.
+                  code:
+                    type: number
+                    example: 409
+
+  /api/authors/{id}:
+    get:
+      summary: Obtener el detalle de un autor por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle del autor obtenido
+        '400':
+          description: El ID provisto no es un número válido
+        '404':
+          description: No se encontró ningún autor con ese ID
+    put:
+      summary: Actualizar parcialmente un autor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                bio:
+                  type: string
+      responses:
+        '200':
+          description: Autor actualizado correctamente
+        '400':
+          description: Error en el formato o cuerpo de la petición vacío
+        '404':
+          description: Autor no encontrado
+        '409':
+          description: El correo ya pertenece a otro autor
+    delete:
+      summary: Eliminar un autor y sus publicaciones en cascada
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Autor y publicaciones eliminados con éxito
+        '400':
+          description: El ID provisto no es un número válido
+        '404':
+          description: Autor no encontrado
+
+  /api/posts:
+    get:
+      summary: Listar todas las publicaciones
+      responses:
+        '200':
+          description: Lista de publicaciones obtenida
+    post:
+      summary: Crear una nueva publicación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - author_id
+              properties:
+                title:
+                  type: string
+                  example: Introducción a APIs
+                content:
+                  type: string
+                  example: Contenido extenso de la publicación
+                author_id:
+                  type: integer
+                  example: 1
+                published:
+                  type: boolean
+                  example: true
+      responses:
+        '201':
+          description: Publicación creada exitosamente
+        '400':
+          description: Errores de validación o el author_id (FK) no existe
+
+  /api/posts/{id}:
+    get:
+      summary: Obtener detalle de una publicación
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Publicación encontrada
+        '400':
+          description: El ID provisto no es un número válido
+        '404':
+          description: Publicación no encontrada
+    put:
+      summary: Actualizar parcialmente una publicación
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Publicación modificada con éxito
+        '400':
+          description: Intento de modificar el autor original o campos inválidos
+        '404':
+          description: Publicación no encontrada
+    delete:
+      summary: Eliminar una publicación
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Publicación eliminada
+        '400':
+          description: El ID provisto no es un número válido
+        '404':
+          description: Publicación no encontrada
+
+  /api/posts/author/{authorId}:
+    get:
+      summary: Obtener publicaciones agrupadas de un autor
+      parameters:
+        - name: authorId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Datos estructurados y agrupados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        author:
+                          $ref: '#/components/schemas/AuthorMin'
+                        posts:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/PostMin'
+        '400':
+          description: El ID del autor no es un número válido
+        '404':
+          description: El autor especificado no existe
+
+components:
+  schemas:
+    Author:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        bio:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    AuthorMin:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+    PostMin:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        published:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: string
+          example: fail
+        message:
+          type: string
+          example: Errores de validación en los datos enviados.
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: El correo no puede exceder los 50 caracteres.
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Mensaje descriptivo del error del sistema.
+        code:
+          type: string
+          example: INTERNAL_SERVER_ERROR

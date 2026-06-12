@@ -1,7 +1,7 @@
 {
   "name": "api-authors-posts",
   "version": "1.0.0",
-  "description": "API REST con Express y PostgreSQL en Railway",
+  "description": "API modular desarrollada con Express, validaciones nativas acumulativas, suite de pruebas en Vitest/Supertest y persistencia relacional.",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
