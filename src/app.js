@@ -18,7 +18,8 @@ app.use('/api/', mainRouter)
 app.use((req, res) => {
   res.status(404).json({
     status: 'fail',
-    message: `No se encontró la ruta ${req.originalUrl} en este servidor.`
+    message: `No se encontró la ruta ${req.originalUrl} en este servidor.`,
+    code: 404
   })
 })
 
