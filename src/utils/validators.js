@@ -45,3 +45,26 @@ export function validateBio(bio) {
   if (prohibitedCharacters.test(cleanBio)) return "La biografía no puede contener caracteres especiales."
   return null
 }
+
+/**
+ * Valida que el título del post cumpla con las reglas del negocio.
+ * @param {string} title 
+ * @returns {string|null} Mensaje de error o null si es válido.
+ */
+export function validatePostTitle(title) {
+  if (!title || title.trim() === '') return "El título es requerido."
+  if (title.length > 50) return "El título no puede exceder los 50 caracteres."
+  if (prohibitedCharacters.test(title)) return "El título no puede contener caracteres especiales."
+  return null
+}
+
+/**
+ * Valida el contenido de la publicación.
+ * @param {string} content 
+ * @returns {string|null} Mensaje de error o null si es válido.
+ */
+export function validatePostContent(content) {
+  if (!content || content.trim() === '') return "El contenido es requerido."
+  if (prohibitedCharacters.test(content)) return "El contenido no puede contener caracteres especiales."
+  return null
+}
