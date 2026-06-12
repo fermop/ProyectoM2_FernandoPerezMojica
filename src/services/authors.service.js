@@ -19,7 +19,7 @@ export async function createAuthorService({ name, email, bio }) {
   try {
     const result = await pool.query(
       'INSERT INTO authors (name, email, bio) VALUES ($1, $2, $3) RETURNING *',
-      [name, email, bio || null]
+      [name, email.toLowerCase(), bio || null]
     )
     return result.rows[0]
   } catch (error) {
@@ -41,7 +41,7 @@ export async function updateAuthorService(id, { name, email, bio }) {
   }
   const currentAuthor = authorResult.rows[0]
   const updatedName = name !== undefined ? name : currentAuthor.name
-  const updatedEmail = email !== undefined ? email : currentAuthor.email
+  const updatedEmail = email !== undefined ? email.toLowerCase() : currentAuthor.email
   const updatedBio = bio !== undefined ? bio : currentAuthor.bio
 
   try {

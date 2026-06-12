@@ -1,28 +1,22 @@
 import request from 'supertest'
 import app from '#app'
-import { localDatabase } from '#database/localDb.js'
+import { pool } from '#database/config.js'
 
 describe('Pruebas de Integración: Recurso Publicaciones (/posts)', () => {
-  beforeEach(() => {
-    localDatabase.authors = [
-      {
-        id: 1,
-        name: "Fernando Pérez",
-        email: "fernando@example.com",
-        bio: "Full Stack Developer",
-        created_at: new Date()
-      }
-    ]
-    localDatabase.posts = [
-      {
-        id: 1,
-        title: "Estructurando una API REST",
-        content: "Contenido inicial de prueba",
-        author_id: 1,
-        published: true,
-        created_at: new Date()
-      }
-    ]
+  beforeEach(async () => {
+    await pool.query('TRUNCATE TABLE posts, authors RESTART IDENTITY CASCADE')
+    await pool.query(
+      'INSERT INTO authors (name, email, bio) VALUES ($1, $2, $3)',
+      ['Fernando Pérez', 'fernando@example.com', 'Full Stack Developer']
+    )
+    await pool.query(
+      'INSERT INTO posts (title, content, author_id, published) VALUES ($1, $2, $3, $4)',
+      ['Estructurando una API REST', 'Contenido inicial de prueba', 1, true]
+    )
+  })
+
+  afterAll(async () => {
+    await pool.end()
   })
 
   describe('GET /api/posts', () => {

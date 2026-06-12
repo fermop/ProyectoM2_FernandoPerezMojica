@@ -1,19 +1,18 @@
 import request from 'supertest'
 import app from '#app'
-import { localDatabase } from '#database/localDb.js'
+import { pool } from '#database/config.js'
 
 describe('Pruebas de Integración - Recurso Autores (/authors)', () => {
-  beforeEach(() => {
-    localDatabase.authors = [
-      {
-        id: 1,
-        name: "Fernando Pérez",
-        email: "fernando@example.com",
-        bio: "Full Stack Developer",
-        created_at: new Date()
-      }
-    ]
-    localDatabase.posts = []
+  beforeEach(async () => {
+    await pool.query('TRUNCATE TABLE posts, authors RESTART IDENTITY CASCADE')
+    await pool.query(
+      'INSERT INTO authors (name, email, bio) VALUES ($1, $2, $3)',
+      ['Fernando Pérez', 'fernando@example.com', 'Full Stack Developer']
+    )
+  })
+
+  afterAll(async () => {
+    await pool.end()
   })
 
   describe('GET /api/authors', () => {
