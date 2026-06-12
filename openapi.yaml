@@ -6,27 +6,48 @@ info:
 servers:
   - url: http://localhost:3000
     description: Servidor de Desarrollo Local
+
+tags:
+  - name: Sistema
+    description: Endpoints para diagnóstico y salud de la aplicación
+  - name: Autores
+    description: Operaciones relacionadas con el recurso de Autores
+  - name: Publicaciones
+    description: Operaciones relacionadas con el recurso de Publicaciones
+
 paths:
+  /api/health:
+    get:
+      tags:
+        - Sistema
+      summary: Obtener el estado y salud del servidor
+      description: Retorna información básica para verificar si el servidor está activo y operando correctamente.
+      responses:
+        '200':
+          description: El servidor está operativo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
   /api/authors:
     get:
+      tags:
+        - Autores
       summary: Listar todos los autores
+      description: Devuelve la lista completa de autores registrados en el sistema.
       responses:
         '200':
           description: Lista de autores obtenida exitosamente
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Author'
+                $ref: '#/components/schemas/AuthorsListResponse'
     post:
+      tags:
+        - Autores
       summary: Crear un nuevo autor
+      description: Registra un nuevo autor en el sistema. Valida que el correo electrónico no esté registrado previamente.
       requestBody:
         required: true
         content:
@@ -39,63 +60,122 @@ paths:
               properties:
                 name:
                   type: string
+                  maxLength: 100
+                  pattern: '^[^<>{}[\]\/\\|;:"]+$'
+                  description: Nombre del autor. No debe contener caracteres especiales.
                   example: Alan Turing
                 email:
                   type: string
+                  maxLength: 50
+                  format: email
+                  description: Correo electrónico único del autor.
                   example: alan@turing.com
                 bio:
                   type: string
+                  maxLength: 255
+                  pattern: '^[^<>{}[\]\/\\|;:"]+$'
+                  description: Biografía corta del autor. No debe contener caracteres especiales.
                   example: Padre de la computación moderna
       responses:
         '201':
           description: Autor creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorResponse'
         '400':
-          description: Errores de validación de formato (campos vacíos, caracteres prohibidos o extras)
+          description: Errores de validación en los datos enviados.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationError'
+              examples:
+                validationError:
+                  summary: Errores de validación en los datos enviados
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los datos enviados."
+                    errors:
+                      - field: "name"
+                        message: "El nombre es requerido."
+                      - field: "email"
+                        message: "El formato del correo electrónico es inválido."
         '409':
           description: Conflicto - El correo electrónico ya se encuentra registrado
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: error
-                  message:
-                    type: string
-                    example: El correo electrónico ya se encuentra registrado.
-                  code:
-                    type: number
-                    example: 409
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflictEmail:
+                  summary: Correo ya registrado
+                  value:
+                    status: "error"
+                    message: "El correo ya se encuentra registrado."
+                    code: 409
 
   /api/authors/{id}:
     get:
+      tags:
+        - Autores
       summary: Obtener el detalle de un autor por ID
+      description: Retorna la información completa de un autor identificado por su ID numérico.
       parameters:
         - name: id
           in: path
           required: true
+          description: ID único del autor a consultar
           schema:
             type: integer
+            example: 1
       responses:
         '200':
-          description: Detalle del autor obtenido
+          description: Detalle del autor obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorResponse'
         '400':
-          description: El ID provisto no es un número válido
+          description: Errores de validación en los parámetros de la petición.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidId:
+                  summary: ID no numérico
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los parámetros de la petición."
+                    errors:
+                      - field: "id"
+                        message: "El ID provisto ('id-invalido') debe ser un número válido."
         '404':
           description: No se encontró ningún autor con ese ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                authorNotFound:
+                  summary: Autor no encontrado
+                  value:
+                    status: "error"
+                    message: "No se encontró ningún autor con el ID: 999"
+                    code: 404
     put:
-      summary: Actualizar parcialmente un autor
+      tags:
+        - Autores
+      summary: Actualizar un autor
+      description: Permite actualizar de forma parcial los campos de un autor (nombre, correo o biografía). Se comporta con semántica de actualización parcial.
       parameters:
         - name: id
           in: path
           required: true
+          description: ID único del autor a actualizar
           schema:
             type: integer
+            example: 1
       requestBody:
         required: true
         content:
@@ -105,43 +185,151 @@ paths:
               properties:
                 name:
                   type: string
+                  maxLength: 100
+                  pattern: '^[^<>{}[\]\/\\|;:"]+$'
+                  description: Nombre actualizado.
+                  example: Alan M. Turing
                 email:
                   type: string
+                  maxLength: 50
+                  format: email
+                  description: Nuevo correo electrónico.
+                  example: alan.turing@turing.com
                 bio:
                   type: string
+                  maxLength: 255
+                  pattern: '^[^<>{}[\]\/\\|;:"]+$'
+                  description: Nueva biografía.
+                  example: Pionero de la inteligencia artificial.
       responses:
         '200':
           description: Autor actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorResponse'
         '400':
-          description: Error en el formato o cuerpo de la petición vacío
+          description: Errores de validación en los parámetros de la petición o en los datos enviados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidId:
+                  summary: ID no numérico
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los parámetros de la petición."
+                    errors:
+                      - field: "id"
+                        message: "El ID provisto ('id-invalido') debe ser un número válido."
+                validationError:
+                  summary: Errores de validación en el cuerpo
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los datos enviados."
+                    errors:
+                      - field: "body"
+                        message: "Debe proporcionar al menos un campo válido para actualizar (name, email o bio)."
         '404':
           description: Autor no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                authorNotFound:
+                  summary: Autor no encontrado
+                  value:
+                    status: "error"
+                    message: "No se encontró ningún autor con el ID: 999"
+                    code: 404
         '409':
           description: El correo ya pertenece a otro autor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflictEmail:
+                  summary: Correo en uso por otro autor
+                  value:
+                    status: "error"
+                    message: "El correo ya se encuentra registrado por otro autor."
+                    code: 409
     delete:
+      tags:
+        - Autores
       summary: Eliminar un autor y sus publicaciones en cascada
+      description: Remueve el autor especificado y elimina de forma automática todas sus publicaciones asociadas en la base de datos (ON DELETE CASCADE).
       parameters:
         - name: id
           in: path
           required: true
+          description: ID único del autor a eliminar
           schema:
             type: integer
+            example: 1
       responses:
         '200':
           description: Autor y publicaciones eliminados con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                deletedSuccess:
+                  summary: Eliminación exitosa
+                  value:
+                    status: "success"
+                    message: "Autor y sus publicaciones eliminados correctamente."
         '400':
-          description: El ID provisto no es un número válido
+          description: Errores de validación en los parámetros de la petición.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidId:
+                  summary: ID no numérico
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los parámetros de la petición."
+                    errors:
+                      - field: "id"
+                        message: "El ID provisto ('id-invalido') debe ser un número válido."
         '404':
           description: Autor no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                authorNotFound:
+                  summary: Autor no encontrado
+                  value:
+                    status: "error"
+                    message: "No se encontró ningún autor con el ID: 999"
+                    code: 404
 
   /api/posts:
     get:
+      tags:
+        - Publicaciones
       summary: Listar todas las publicaciones
+      description: Devuelve la lista completa de publicaciones en el sistema.
       responses:
         '200':
-          description: Lista de publicaciones obtenida
+          description: Lista de publicaciones obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostsListResponse'
     post:
+      tags:
+        - Publicaciones
       summary: Crear una nueva publicación
+      description: Registra una publicación asociada a un autor existente.
       requestBody:
         required: true
         content:
@@ -155,146 +343,516 @@ paths:
               properties:
                 title:
                   type: string
+                  maxLength: 50
+                  pattern: '^[^<>{}[\]\/\\|;:"]+$'
+                  description: Título del post.
                   example: Introducción a APIs
                 content:
                   type: string
+                  pattern: '^[^<>{}[\]\/\\|;:"]+$'
+                  description: Contenido detallado del post.
                   example: Contenido extenso de la publicación
                 author_id:
                   type: integer
+                  description: ID del autor al que pertenecerá el post.
                   example: 1
                 published:
                   type: boolean
+                  default: true
+                  description: Indica si el post se creará publicado.
                   example: true
       responses:
         '201':
           description: Publicación creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
         '400':
-          description: Errores de validación o el author_id (FK) no existe
+          description: Errores de validación en los datos enviados o autor inexistente.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationError'
+                  - $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Error de validación de campos
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los datos enviados."
+                    errors:
+                      - field: "title"
+                        message: "El título es requerido."
+                authorNotExists:
+                  summary: Autor no existe (FK error)
+                  value:
+                    status: "error"
+                    message: "No se puede crear la publicación. El autor con ID 999 no existe."
+                    code: 400
 
   /api/posts/{id}:
     get:
+      tags:
+        - Publicaciones
       summary: Obtener detalle de una publicación
+      description: Retorna la información detallada de una publicación a través de su ID.
       parameters:
         - name: id
           in: path
           required: true
+          description: ID de la publicación a consultar
           schema:
             type: integer
+            example: 1
       responses:
         '200':
-          description: Publicación encontrada
+          description: Publicación encontrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
         '400':
-          description: El ID provisto no es un número válido
+          description: Errores de validación en los parámetros de la petición.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidId:
+                  summary: ID no numérico
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los parámetros de la petición."
+                    errors:
+                      - field: "id"
+                        message: "El ID provisto ('id-invalido') debe ser un número válido."
         '404':
           description: Publicación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                postNotFound:
+                  summary: Publicación no encontrada
+                  value:
+                    status: "error"
+                    message: "No se encontró ninguna publicación con el ID: 999"
+                    code: 404
     put:
-      summary: Actualizar parcialmente una publicación
+      tags:
+        - Publicaciones
+      summary: Actualizar una publicación
+      description: Permite modificar el título, contenido o estado de publicación. No se permite cambiar el autor original.
       parameters:
         - name: id
           in: path
           required: true
+          description: ID de la publicación a modificar
           schema:
             type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 50
+                  pattern: '^[^<>{}[\]\/\\|;:"]+$'
+                  description: Nuevo título de la publicación.
+                  example: Introducción a APIs Modernas
+                content:
+                  type: string
+                  pattern: '^[^<>{}[\]\/\\|;:"]+$'
+                  description: Nuevo contenido de la publicación.
+                  example: Contenido actualizado y expandido.
+                published:
+                  type: boolean
+                  description: Nuevo estado de publicación.
+                  example: false
       responses:
         '200':
           description: Publicación modificada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
         '400':
-          description: Intento de modificar el autor original o campos inválidos
+          description: Errores de validación en los parámetros de la petición o en los datos enviados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidId:
+                  summary: ID no numérico
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los parámetros de la petición."
+                    errors:
+                      - field: "id"
+                        message: "El ID provisto ('id-invalido') debe ser un número válido."
+                illegalAuthorModify:
+                  summary: Modificar autor no permitido
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los datos enviados."
+                    errors:
+                      - field: "extra"
+                        message: "No está permitido modificar el autor original de una publicación."
         '404':
           description: Publicación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                postNotFound:
+                  summary: Publicación no encontrada
+                  value:
+                    status: "error"
+                    message: "No se encontró ninguna publicación con el ID: 999"
+                    code: 404
     delete:
+      tags:
+        - Publicaciones
       summary: Eliminar una publicación
+      description: Remueve una publicación del sistema mediante su ID.
       parameters:
         - name: id
           in: path
           required: true
+          description: ID de la publicación a eliminar
           schema:
             type: integer
+            example: 1
       responses:
         '200':
-          description: Publicación eliminada
+          description: Publicación eliminada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                deletedSuccess:
+                  summary: Eliminación exitosa
+                  value:
+                    status: "success"
+                    message: "Publicación eliminada correctamente."
         '400':
-          description: El ID provisto no es un número válido
+          description: Errores de validación en los parámetros de la petición.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidId:
+                  summary: ID no numérico
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los parámetros de la petición."
+                    errors:
+                      - field: "id"
+                        message: "El ID provisto ('id-invalido') debe ser un número válido."
         '404':
           description: Publicación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                postNotFound:
+                  summary: Publicación no encontrada
+                  value:
+                    status: "error"
+                    message: "No se encontró ninguna publicación con el ID: 999"
+                    code: 404
 
   /api/posts/author/{authorId}:
     get:
+      tags:
+        - Publicaciones
       summary: Obtener publicaciones agrupadas de un autor
+      description: Devuelve el detalle del autor con un arreglo que agrupa todas sus publicaciones asociadas.
       parameters:
         - name: authorId
           in: path
           required: true
+          description: ID del autor
           schema:
             type: integer
+            example: 1
       responses:
         '200':
-          description: Datos estructurados y agrupados
+          description: Datos estructurados y agrupados obtenidos con éxito
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        author:
-                          $ref: '#/components/schemas/AuthorMin'
-                        posts:
-                          type: array
-                          items:
-                            $ref: '#/components/schemas/PostMin'
+                $ref: '#/components/schemas/PostsByAuthorResponse'
         '400':
-          description: El ID del autor no es un número válido
+          description: Errores de validación en los parámetros de la petición.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidId:
+                  summary: ID no numérico
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los parámetros de la petición."
+                    errors:
+                      - field: "id"
+                        message: "El ID provisto ('id-invalido') debe ser un número válido."
         '404':
-          description: El autor especificado no existe
+          description: El autor especificado no existe en el sistema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                authorNotFound:
+                  summary: Autor no encontrado
+                  value:
+                    status: "error"
+                    message: "No se encontró ningún autor con el ID: 999"
+                    code: 404
 
 components:
   schemas:
     Author:
       type: object
+      required:
+        - id
+        - name
+        - email
+        - created_at
       properties:
         id:
           type: integer
+          description: Identificador numérico autogenerado
+          example: 1
         name:
           type: string
+          description: Nombre completo del autor
+          example: Alan Turing
         email:
           type: string
+          format: email
+          description: Correo electrónico del autor
+          example: alan@turing.com
         bio:
           type: string
+          nullable: true
+          description: Biografía del autor
+          example: Padre de la computación moderna
         created_at:
           type: string
           format: date-time
+          description: Fecha de registro del autor
+          example: "2026-06-12T12:00:00.000Z"
+
     AuthorMin:
       type: object
+      required:
+        - id
+        - name
+        - email
       properties:
         id:
           type: integer
+          example: 1
         name:
           type: string
+          example: Alan Turing
         email:
           type: string
-    PostMin:
+          format: email
+          example: alan@turing.com
+
+    Post:
       type: object
+      required:
+        - id
+        - title
+        - content
+        - author_id
+        - published
+        - created_at
       properties:
         id:
           type: integer
+          description: Identificador numérico autogenerado del post
+          example: 1
         title:
           type: string
+          description: Título de la publicación
+          example: Introducción a APIs
         content:
           type: string
+          description: Contenido de la publicación
+          example: Contenido extenso de la publicación
+        author_id:
+          type: integer
+          description: ID del autor propietario de la publicación
+          example: 1
         published:
           type: boolean
+          description: Estado del post (publicado o borrador)
+          example: true
         created_at:
           type: string
           format: date-time
+          description: Fecha de creación de la publicación
+          example: "2026-06-12T12:05:00.000Z"
+
+    PostMin:
+      type: object
+      required:
+        - id
+        - title
+        - content
+        - published
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Introducción a APIs
+        content:
+          type: string
+          example: Contenido extenso de la publicación
+        published:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-06-12T12:05:00.000Z"
+
+    # Envolvedores de respuestas (JSend Format)
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - message
+        - timestamp
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: API activa y operando correctamente
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-06-12T18:54:40.000Z"
+
+    AuthorResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/Author'
+
+    AuthorsListResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+
+    PostResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: '#/components/schemas/Post'
+
+    PostsListResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+
+    PostsByAuthorResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            type: object
+            required:
+              - author
+              - posts
+            properties:
+              author:
+                $ref: '#/components/schemas/AuthorMin'
+              posts:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostMin'
+
+    MessageResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Operación realizada con éxito.
+
+    # Respuestas de Error
     ValidationError:
       type: object
+      required:
+        - status
+        - message
+        - errors
       properties:
         status:
           type: string
@@ -306,6 +864,9 @@ components:
           type: array
           items:
             type: object
+            required:
+              - field
+              - message
             properties:
               field:
                 type: string
@@ -313,15 +874,23 @@ components:
               message:
                 type: string
                 example: El correo no puede exceder los 50 caracteres.
+
     ErrorResponse:
       type: object
+      required:
+        - status
+        - message
+        - code
       properties:
         status:
           type: string
           example: error
         message:
           type: string
-          example: Mensaje descriptivo del error del sistema.
+          example: No se encontró ningún autor con el ID: 999
         code:
-          type: string
-          example: INTERNAL_SERVER_ERROR
+          oneOf:
+            - type: integer
+              example: 404
+            - type: string
+              example: INTERNAL_SERVER_ERROR
