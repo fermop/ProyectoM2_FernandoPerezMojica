@@ -12,7 +12,9 @@ describe('Pruebas de Integración - Recurso Autores (/authors)', () => {
   })
 
   afterAll(async () => {
-    await pool.end()
+    if (process.env.VITEST_WATCH !== 'true') {
+      await pool.end()
+    }
   })
 
   describe('GET /api/authors', () => {
