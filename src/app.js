@@ -1,4 +1,5 @@
 import express from 'express'
+import cors from 'cors'
 import swaggerUi from 'swagger-ui-express'
 import YAML from 'yamljs'
 import mainRouter from '#routes/index.js'
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
+app.use(cors())
 app.use('/api/', mainRouter)
 
 app.use((req, res) => {
