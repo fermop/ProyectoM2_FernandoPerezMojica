@@ -8,10 +8,25 @@ API REST modular y moderna desarrollada con Node.js, Express y PostgreSQL para g
 > 
 > Al realizar la **primera petición** (o intentar acceder a Swagger UI), el servidor puede demorar **entre 15 y 50 segundos** en reiniciarse e inicializar la conexión con PostgreSQL. Las peticiones subsecuentes responderán de forma instantánea.
 
----
-
 - 🌐 URL de API: [https://proyectom2fernandoperezmojica-production.up.railway.app/api/health](https://proyectom2fernandoperezmojica-production.up.railway.app/api/health)
 - 📁 Documentación de endpoints en Swagger UI: [https://proyectom2fernandoperezmojica-production.up.railway.app/api-docs](https://proyectom2fernandoperezmojica-production.up.railway.app/api-docs)
+
+---
+
+## Contenido
+
+- [Características Principales](#características-principales)
+- [Modelo Entidad-Relación](#modelo-entidad-relación)
+- [Endpoints](#endpoints)
+- [Estructura del Proyecto e Importaciones ECMAScript](#estructura-del-proyecto-e-importaciones-ecmascript)
+- [Requisitos Previos](#requisitos-previos)
+- [Configuración y Ejecución Local](#configuración-y-ejecución-local)
+- [Suite de Pruebas (Testing)](#suite-de-pruebas-testing)
+- [Documentación de la API (OpenAPI / Swagger)](#documentación-de-la-api-openapi--swagger)
+- [Guía de Despliegue (Railway)](#guía-de-despliegue-railway)
+- [Registro de Uso de Inteligencia Artificial](#registro-de-uso-de-inteligencia-artificial)
+
+---
 
 ## Características Principales
 
@@ -22,6 +37,53 @@ API REST modular y moderna desarrollada con Node.js, Express y PostgreSQL para g
 - **Documentación OpenAPI 3.1.1**: Especificación completa montada dinámicamente con Swagger UI.
 - **Pruebas Unitarias e Integración**: Cobertura automatizada con Vitest y Supertest. Incluye pruebas unitarias aisladas para la lógica de validación de campos y pruebas de integración secuenciales contra la base de datos real (con limpieza automática).
 - **Apagado Gracioso (Graceful Shutdown)**: Liberación ordenada de recursos y conexiones al recibir señales `SIGINT` o `SIGTERM`.
+
+---
+
+## Modelo Entidad-Relación
+
+```mermaid
+erDiagram
+    AUTHORS ||--o{ POSTS : escribe
+
+    AUTHORS {
+        int id PK
+        varchar(100) name
+        varchar(50) email
+        varchar(255) bio
+        timestamptz created_at
+    }
+    POSTS {
+        int id PK
+        varchar(50) title
+        text content
+        int author_id FK
+        boolean published
+        timestamptz created_at
+    }
+```
+
+Relación:
+
+- Un author puede tener muchos posts (`author_id` en posts, `ON DELETE CASCADE`)
+
+---
+
+## Endpoints
+
+| Método | Ruta                    | Descripción        |
+| ------ | ----------------------- | ------------------ |
+| GET    | /authors                | Listar authors     |
+| GET    | /authors/:id            | Obtener author     |
+| POST   | /authors                | Crear author       |
+| PUT    | /authors/:id            | Actualizar author  |
+| DELETE | /authors/:id            | Eliminar author    |
+| GET    | /posts                  | Listar posts       |
+| GET    | /posts/:id              | Obtener post       |
+| GET    | /posts/author/:authorId | Posts de un author |
+| POST   | /posts                  | Crear post         |
+| PUT    | /posts/:id              | Actualizar post    |
+| DELETE | /posts/:id              | Eliminar post      |
 
 ---
 
@@ -198,7 +260,7 @@ La API cuenta con Swagger UI integrado. Una vez levantado el servidor local (`np
 
 ### Pasos para el Despliegue:
 1. **Tener el Proyecto de Node en un Repositorio de Github**
-2. **Crear una cuenta** en caso de no contar con alguna, de preferencia con GitHub para acceder a tus repositorios.
+2. **Crear una cuenta en [Railway](https://railway.com/)** en caso de no contar con alguna, de preferencia con GitHub para acceder a tus repositorios.
 3. **Crear una Base de Datos PostgreSQL en Railway**:
    - En tu panel de Railway, haz clic en **+ New** > **Database** > **Add PostgreSQL**.
 
@@ -218,11 +280,11 @@ La API cuenta con Swagger UI integrado. Una vez levantado el servidor local (`np
    ```bash
    psql url_copiada_de_variable_publica_de_DATABASE_URL_PUBLIC
    ```
-   - Una vez conectado a la base de datos de Railway ejecuta el siguiente comando para crear las tablas:
+   - Una vez conectado a la base de datos de Railway ejecuta el siguiente comando para crear las tablas `authors` y `posts`:
    ```bash
    \i src/database/scripts/setup.sql
    ```
-   - Posteriormente ejecuta el siguiente comando para insertar los datos prueba del `src/database/scripts/setup.sql`:
+   - Posteriormente ejecuta el siguiente comando para insertar los datos prueba:
    ```bash
    \i src/database/scripts/seed.sql
    ```
@@ -240,13 +302,13 @@ La API cuenta con Swagger UI integrado. Una vez levantado el servidor local (`np
    - Ve a la pestaña **Variables** de tu servicio Node en Railway y vincula las siguientes variables:
      - `DATABASE_URL`: `${{Postgres.DATABASE_URL}}` (Esta referencia inyecta la URL de conexión interna provista por el servicio de base de datos de PostgreSQL creado en el paso 3).
      - `NODE_ENV`: `production` (Habilita la validación SSL obligatoria configurada en el Pool de conexiones).
-     - Haz click en el botón morado 'Deploy'.
+     - Haz click en el botón morado `Deploy`.
 
      ![Variables para Node y Deploy](./src/doc/img/node-add-variables-click-deploy.png)
 
 6. **Generar Dominio Público en el Servicio de Node**
    - Ve a la pestaña *Settings* y haz click en el apartado *Network* ubicado a la derecha.
-   - Haz click en el botón morado 'Generate Domain'.
+   - Haz click en el botón morado `Generate Domain`.
 
    ![Generar dominio público](./src/doc/img/node-generate-domain.png)
 
