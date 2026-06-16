@@ -4,10 +4,10 @@ info:
   description: API modular desarrollada con Express, validaciones nativas acumulativas, suite de pruebas en Vitest/Supertest y persistencia relacional.
   version: 1.0.0
 servers:
-  - url: http://localhost:3000
-    description: Servidor de Desarrollo Local
   - url: https://proyectom2fernandoperezmojica-production.up.railway.app
     description: Servidor de Producción
+  - url: http://localhost:3000
+    description: Servidor de Desarrollo Local
 
 tags:
   - name: Sistema
@@ -102,6 +102,14 @@ paths:
                         message: "El nombre es requerido."
                       - field: "email"
                         message: "El formato del correo electrónico es inválido."
+                extraFieldsError:
+                  summary: Error con campos extras inválidos
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los datos enviados."
+                    errors:
+                      - field: "extra"
+                        message: "Campos no permitidos en el cuerpo de la petición: role, age"
         '409':
           description: Conflicto - El correo electrónico ya se encuentra registrado
           content:
@@ -233,6 +241,14 @@ paths:
                     errors:
                       - field: "body"
                         message: "Debe proporcionar al menos un campo válido para actualizar (name, email o bio)."
+                extraFieldsError:
+                  summary: Error con campos extras inválidos
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los datos enviados."
+                    errors:
+                      - field: "extra"
+                        message: "Campos no permitidos en el cuerpo de la petición: role, age"
         '404':
           description: Autor no encontrado
           content:
@@ -393,6 +409,14 @@ paths:
                     status: "error"
                     message: "No se puede crear la publicación. El autor con ID 999 no existe."
                     code: 400
+                extraFieldsError:
+                  summary: Error con campos extras inválidos
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los datos enviados."
+                    errors:
+                      - field: "extra"
+                        message: "Campos no permitidos en el cuerpo de la petición: likes, views"
 
   /api/posts/{id}:
     get:
@@ -508,6 +532,14 @@ paths:
                     errors:
                       - field: "extra"
                         message: "No está permitido modificar el autor original de una publicación."
+                extraFieldsError:
+                  summary: Error con campos extras inválidos
+                  value:
+                    status: "fail"
+                    message: "Errores de validación en los datos enviados."
+                    errors:
+                      - field: "extra"
+                        message: "Campos no permitidos en el cuerpo de la petición: likes, views"
         '404':
           description: Publicación no encontrada
           content:
